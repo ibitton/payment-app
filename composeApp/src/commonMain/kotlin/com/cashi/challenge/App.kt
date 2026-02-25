@@ -1,49 +1,41 @@
 package com.cashi.challenge
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import com.cashi.challenge.ui.screens.PaymentScreen
+import com.cashi.challenge.ui.screens.TransactionHistoryScreen
 
-import cashimobileappchallenge.composeapp.generated.resources.Res
-import cashimobileappchallenge.composeapp.generated.resources.compose_multiplatform
-
+/**
+ * Main app entry point.
+ * Handles simple navigation between Payment and Transaction History screens.
+ */
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Payment) }
+
+    when (currentScreen) {
+        Screen.Payment -> {
+            PaymentScreen(
+                onNavigateToHistory = { currentScreen = Screen.History }
+            )
+        }
+        Screen.History -> {
+            TransactionHistoryScreen(
+                onNavigateBack = { currentScreen = Screen.Payment }
+            )
         }
     }
+}
+
+/**
+ * Simple sealed class for navigation screens.
+ */
+private sealed class Screen {
+    data object Payment : Screen()
+    data object History : Screen()
 }
