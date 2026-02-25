@@ -13,7 +13,7 @@ kotlin {
         namespace = "com.cashi.challenge"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
         androidResources {
             enable = true
@@ -35,12 +35,6 @@ kotlin {
         binaries.executable()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
-
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -52,6 +46,16 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+        }
+        androidMain.dependencies {
+            implementation(libs.koin.android)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.composeViewmodel)
+        }
+        commonMain.dependencies {
+            implementation(libs.koin.compose)
+            implementation(libs.koin.composeViewmodel)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
