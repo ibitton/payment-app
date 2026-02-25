@@ -1,0 +1,13 @@
+{
+  "name": "cashi-payment-appium-tests",
+  "version": "1.0.0",
+  "description": "Appium UI tests for Cashi Payment App",
+  "main": "payment-flow-test.js",
+  "scripts": {
+    "test": "node payment-flow-test.js"
+  },
+  "dependencies": {
+    "webdriverio": "^8.27.0"
+  },
+  "devDependencies": {}
+}
