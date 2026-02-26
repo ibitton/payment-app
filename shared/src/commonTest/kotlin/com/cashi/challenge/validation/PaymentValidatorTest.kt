@@ -1,4 +1,4 @@
-package com.cashi.challenge.bdd
+package com.cashi.challenge.validation
 
 import com.cashi.challenge.domain.models.PaymentRequest
 import com.cashi.challenge.domain.validation.PaymentValidator
