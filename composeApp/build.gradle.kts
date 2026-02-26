@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -11,6 +10,7 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "com.cashi.challenge.compose"
+        minSdk = libs.versions.android.minSdk.get().toInt()
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
@@ -51,11 +51,6 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.compose)
             implementation(libs.koin.composeViewmodel)
-        }
-        commonMain.dependencies {
-            implementation(libs.koin.compose)
-            implementation(libs.koin.composeViewmodel)
-            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
