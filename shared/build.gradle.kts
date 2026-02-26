@@ -49,6 +49,10 @@ kotlin {
             // Koin DI
             implementation(libs.koin.core)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+        }
         androidMain.dependencies {
             // Ktor Client Android engine
             implementation(libs.ktor.clientAndroid)
@@ -67,10 +71,10 @@ kotlin {
     }
 }
 
-// Configure JVM tests to use JUnit Platform (required for Spek)
+// Configure JVM tests to use JUnit Platform
 tasks.withType<Test>().configureEach {
     useJUnitPlatform {
-        includeEngines("spek2")
+        includeEngines("spek2", "junit-jupiter")
     }
     testLogging {
         events("passed", "skipped", "failed")
