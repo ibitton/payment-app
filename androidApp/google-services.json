@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "457476409704",
+    "project_id": "cashi-payment-challenge",
+    "storage_bucket": "cashi-payment-challenge.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:457476409704:android:b7d6d89bd5b91f370f2edd",
+        "android_client_info": {
+          "package_name": "com.cashi.challenge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCz8utzYlQkJvtX-8g6-6s7Kb1rymfPVQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

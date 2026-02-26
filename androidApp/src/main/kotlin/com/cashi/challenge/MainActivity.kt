@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.cashi.challenge.di.commonModule
+import com.cashi.challenge.di.viewModelModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -16,11 +17,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Initialize Koin
         startKoin {
             androidLogger()
             androidContext(this@MainActivity)
-            modules(commonModule())
+            modules(commonModule(), viewModelModule())
         }
 
         setContent {
