@@ -7,6 +7,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.header
 import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
@@ -145,7 +146,7 @@ private fun validatePaymentRequestServerSide(request: PaymentRequest): List<Stri
  * Server accepts any valid ISO currency code, not just the app's supported list.
  */
 private fun isValidCurrencyCode(currencyCode: String): Boolean {
-    // ISO 4217: 3 letters, case insensitive
+    // ISO 4217: 3 letters, case-insensitive
     return currencyCode.length == 3 && currencyCode.all { it.isLetter() }
 }
 
