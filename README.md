@@ -374,48 +374,7 @@ The video demonstrates:
 
 ## Demo Script
 
-Follow these steps to demonstrate the app functionality:
-
-### Prerequisites
-- Android emulator running (API 28+) or physical device
-- Backend server started: `.\gradlew.bat :server:run`
-- APK installed: `.\gradlew.bat :androidApp:installDebug`
-
-### Scenario 1: Send a Valid Payment
-1. Open the Cashi app on your device
-2. Enter recipient email: `test@example.com`
-3. Enter amount: `100.00`
-4. Select currency: **USD** from dropdown
-5. Tap "Send Payment" button
-6. **Expected**: Green success message "Payment sent successfully" appears
-
-### Scenario 2: Validation Error (Invalid Email)
-1. Clear the form (tap X on fields if present, or retype)
-2. Enter email: `invalid-email` (no @ symbol)
-3. Enter amount: `50`
-4. Select currency: **EUR**
-5. Tap "Send Payment"
-6. **Expected**: Red error message "Invalid email format" appears inline
-
-### Scenario 3: View Transaction History
-1. From payment screen, tap "History" button at bottom
-2. **Expected**: Transaction list appears showing previous payment
-3. **Expected**: Status shows "Success" with green indicator
-4. **Expected**: Amount shows "$100.00", email shows "test@example.com"
-
-### Scenario 4: Real-time Update Demonstration
-1. Keep History screen open on Device A
-2. From Device B (or emulator instance), send a new payment
-3. **Expected**: New transaction appears automatically in Device A without manual refresh
-4. **Expected**: New entry shows correct amount, currency, and timestamp
-
-### Scenario 5: Currency Support
-1. Return to payment screen (tap back arrow)
-2. Tap currency dropdown
-3. **Expected**: List shows 16 currencies (USD, EUR, GBP, JPY, CAD, etc.)
-4. Select any non-USD currency (e.g., JPY)
-5. Enter amount and valid email
-6. **Expected**: Payment processes with selected currency
+A demo script is available to verify the apps capabilities. See [DEMO_SCRIPT.md](./DEMO_SCRIPT.md) for more.
 
 ## Production Considerations
 
@@ -525,38 +484,6 @@ The app supports 16 major international currencies:
 - **Minimum**: $0.01 (or equivalent)
 - **Maximum**: $1,000,000 (or equivalent)
 - **Precision**: 2 decimal places (cents)
-
-## Development Guidelines
-
-### Adding a New Currency
-
-1. Add to `Currency` enum in `shared/src/commonMain/kotlin/domain/models/Payment.kt`
-2. Update `PaymentValidator` error message to include new currency
-3. Add BDD test scenario in `PaymentValidationSpek.kt`
-4. Add unit test in `PaymentValidatorTest.kt`
-
-### Adding a New Test
-
-**BDD Test (Spek):**
-```kotlin
-describe("Given a user [scenario]") {
-    val request = PaymentRequest(...)
-    it("should [expected outcome]") {
-        val result = validator.validate(request)
-        // assertions
-    }
-}
-```
-
-**Unit Test:**
-```kotlin
-@Test
-fun `[descriptive test name]`() {
-    val request = PaymentRequest(...)
-    val result = validator.validate(request)
-    // assertions
-}
-```
 
 ## Troubleshooting
 
