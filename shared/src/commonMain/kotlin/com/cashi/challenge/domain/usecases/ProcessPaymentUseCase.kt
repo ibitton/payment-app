@@ -38,7 +38,6 @@ class ProcessPaymentUseCase(
         request: PaymentRequest,
         idempotencyKey: String
     ): OperationResult<Payment> {
-        // Step 1: Validate the request
         val validationResult = paymentValidator.validate(request)
         if (validationResult is ValidationResult.Error) {
             return OperationResult.Failure(
@@ -46,13 +45,8 @@ class ProcessPaymentUseCase(
             )
         }
 
-        // Step 2: Call the backend API, passing idempotency key to prevent duplicate charges
-        val apiResult = paymentApi.processPayment(request, idempotencyKey)
-
-        // Step 3: Handle API response and save to Firestore
-        return when (apiResult) {
+        return when (val apiResult = paymentApi.processPayment(request, idempotencyKey)) {
             is OperationResult.Success -> {
-                // Map DTOs to domain model before saving
                 val payment = PaymentMapper.toDomain(request, apiResult.data)
                 paymentRepository.createAndSaveTransaction(payment)
             }

@@ -243,21 +243,21 @@ private fun CurrencyDropdown(
 
 private fun getCurrencySymbol(currency: Currency): String {
     return when (currency) {
-        Currency.USD -> $$"$"
+        Currency.USD -> "$"
         Currency.EUR -> "\u20AC"
         Currency.GBP -> "\u00A3"
         Currency.JPY -> "\u00A5"
-        Currency.CAD -> $$"C$"
-        Currency.AUD -> $$"A$"
+        Currency.CAD -> "C$"
+        Currency.AUD -> "A$"
         Currency.CHF -> "Fr"
         Currency.CNY -> "\u00A5"
         Currency.INR -> "\u20B9"
-        Currency.SGD -> $$"S$"
-        Currency.NZD -> $$"NZ$"
+        Currency.SGD -> "S$"
+        Currency.NZD -> "NZ$"
         Currency.SEK -> "kr"
         Currency.NOK -> "kr"
         Currency.DKK -> "kr"
         Currency.PLN -> "z\u0142"
-        Currency.MXN -> $$"$"
+        Currency.MXN -> "$"
     }
 }

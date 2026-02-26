@@ -9,7 +9,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTime::class)
 actual fun formatInstant(instant: Instant): String {
     val millis = instant.toEpochMilliseconds()
-    val jsDate = js("new Date(millis)")
+    val jsDate = js("function(millis) { return new Date(millis); }").call(millis)
 
     val year = jsDate.getFullYear().toString()
     val month = (jsDate.getMonth() + 1).toString().padStart(2, '0')

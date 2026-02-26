@@ -66,7 +66,7 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
                 snapshot.documents.mapNotNull { document ->
                     try {
                         document.data<Payment>()
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null // Skip documents that can't be deserialized
                     }
                 }

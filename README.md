@@ -308,8 +308,6 @@ This replaces mixed `Result<>` and exception handling across API, repository, an
 - **PaymentProcessingSpek**: 9 BDD scenarios for payment flow
 - **PaymentValidatorTest** (commonTest): 24 unit tests for validation logic
 - **ProcessPaymentUseCaseTest**: Use case tests with fakes
-- **PaymentViewModelTest**: State management and interaction testing
-- **TransactionHistoryViewModelTest**: Flow collection and error handling testing
 
 ### Run UI Tests with Appium
 
