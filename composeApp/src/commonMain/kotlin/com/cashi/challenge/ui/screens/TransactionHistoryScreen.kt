@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
 import com.cashi.challenge.domain.models.PaymentStatus
@@ -71,12 +72,20 @@ fun TransactionHistoryScreen(
                 title = { Text("Transaction History") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Text("←")
+                        Text(
+                            text = "←",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontSize = 28.sp
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = viewModel::refresh) {
-                        Text("↻")
+                        Text(
+                            text = "↻",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontSize = 28.sp
+                        )
                     }
                 }
             )
@@ -90,24 +99,20 @@ fun TransactionHistoryScreen(
         ) {
             when {
                 uiState.isLoading && uiState.transactions.isEmpty() -> {
-                    // Initial loading
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
+
                 uiState.transactions.isEmpty() -> {
-                    // Empty state
                     EmptyTransactionsState()
                 }
+
                 else -> {
-                    // Transactions list
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.transactions) { transaction ->
                             TransactionCard(transaction = transaction)
@@ -115,125 +120,63 @@ fun TransactionHistoryScreen(
                     }
                 }
             }
-
-            // Show loading indicator at top when refreshing
-            if (uiState.isLoading && uiState.transactions.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .width(32.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-            }
         }
     }
 }
 
-@Composable
-private fun EmptyTransactionsState() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "✓",
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "No Transactions Yet",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Your payment history will appear here once you send your first payment.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
+/**
+ * Card displaying a single transaction.
+ */
 @Composable
 private fun TransactionCard(transaction: Payment) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Top row: Email and Status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.recipientEmail,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    overflow = TextOverflow.Ellipsis
                 )
-                StatusChip(status = transaction.status)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Amount and Currency
-            Row(
-                verticalAlignment = Alignment.Bottom
-            ) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = formatAmount(transaction.amount),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = transaction.currency.name,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = formatTimestamp(transaction.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-            // Timestamp
-            Text(
-                text = formatTimestamp(transaction.timestamp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Error message if failed
-            if (transaction.status == PaymentStatus.FAILED && !transaction.errorMessage.isNullOrEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Error: ${transaction.errorMessage}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    text = "${getCurrencySymbol(transaction.currency)}${formatAmount(transaction.amount)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = when (transaction.status) {
+                        PaymentStatus.SUCCESS -> MaterialTheme.colorScheme.primary
+                        PaymentStatus.FAILED -> MaterialTheme.colorScheme.error
+                        PaymentStatus.PENDING -> MaterialTheme.colorScheme.tertiary
+                    }
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                StatusChip(status = transaction.status)
             }
         }
     }
 }
 
+/**
+ * Displays a status chip for the transaction.
+ */
 @Composable
 private fun StatusChip(status: PaymentStatus) {
     val color = when (status) {
@@ -242,33 +185,86 @@ private fun StatusChip(status: PaymentStatus) {
         PaymentStatus.PENDING -> MaterialTheme.colorScheme.tertiary
     }
 
+    val label = when (status) {
+        PaymentStatus.SUCCESS -> "Success"
+        PaymentStatus.FAILED -> "Failed"
+        PaymentStatus.PENDING -> "Pending"
+    }
+
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // Simple circle indicator instead of icons
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier.size(12.dp)
-        ) {
+        Canvas(modifier = Modifier.size(8.dp)) {
             drawCircle(color = color)
         }
-        Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = status.name,
-            style = MaterialTheme.typography.labelMedium,
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
             color = color
         )
     }
 }
 
-private fun formatAmount(amount: Double): String {
-    // Use toString with 2 decimal places manually for KMP compatibility
-    val scaled = (amount * 100).toInt()
-    val dollars = scaled / 100
-    val cents = scaled % 100
-    return "$dollars.${cents.toString().padStart(2, '0')}"
+/**
+ * Empty state when no transactions exist.
+ */
+@Composable
+private fun EmptyTransactionsState() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "No transactions yet",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Your payment history will appear here",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
+/**
+ * Formats a timestamp (epoch milliseconds) to a readable date string.
+ */
+@OptIn(kotlin.time.ExperimentalTime::class)
 private fun formatTimestamp(timestamp: Long): String {
-    val instant = kotlin.time.Instant.fromEpochMilliseconds(timestamp)
-    return formatInstant(instant)
+    return formatInstant(kotlin.time.Instant.fromEpochMilliseconds(timestamp))
+}
+
+/**
+ * Formats an amount with 2 decimal places.
+ */
+private fun formatAmount(amount: Double): String {
+    return (kotlin.math.round(amount * 100) / 100).toString()
+}
+
+/**
+ * Gets the currency symbol for display.
+ */
+private fun getCurrencySymbol(currency: Currency): String {
+    return when (currency) {
+        Currency.USD -> "$"
+        Currency.EUR -> "€"
+        Currency.GBP -> "£"
+        Currency.JPY -> "¥"
+        Currency.CAD -> "C$"
+        Currency.AUD -> "A$"
+        Currency.CHF -> "Fr"
+        Currency.CNY -> "¥"
+        Currency.INR -> "₹"
+        Currency.SGD -> "S$"
+        Currency.NZD -> "NZ$"
+        Currency.SEK -> "kr"
+        Currency.NOK -> "kr"
+        Currency.DKK -> "kr"
+        Currency.PLN -> "zł"
+        Currency.MXN -> "$"
+    }
 }
