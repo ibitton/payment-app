@@ -76,6 +76,13 @@ interface PaymentRepository {
 
 Implementations (`PaymentApiClient`, `FirestorePaymentRepository`) are bound via Koin DI, allowing test fakes to be substituted without code changes.
 
+**Data Mapping**
+
+The `PaymentMapper` separates data layer DTOs (`PaymentRequest`, `PaymentResponse`) from domain models (`Payment`). This ensures:
+- Clean separation between API serialization format and internal domain representation
+- Centralized conversion logic for currency parsing and data transformation
+- Domain layer remains pure with no data layer dependencies
+
 **Unified Error Handling**
 
 A sealed class `OperationResult<T>` provides consistent error handling across all layers:
@@ -152,7 +159,12 @@ CashiMobileAppChallenge/
 │       │       ├── data/
 │       │       │   ├── api/
 │       │       │   │   ├── PaymentApi.kt           # API contract interface
-│       │       │   │   └── PaymentApiClient.kt     # Ktor HTTP client implementation
+│       │       │   │   ├── PaymentApiClient.kt     # Ktor HTTP client implementation
+│       │       │   │   └── dto/
+│       │       │   │       ├── PaymentRequest.kt   # API request DTO
+│       │       │   │       └── PaymentResponse.kt  # API response DTO
+│       │       │   ├── mapper/
+│       │       │   │   └── PaymentMapper.kt        # DTO to domain model mapping
 │       │       │   └── repository/
 │       │       │       ├── PaymentRepository.kt    # Repository contract interface
 │       │       │       └── FirestorePaymentRepository.kt # Firestore implementation
@@ -287,28 +299,14 @@ This replaces mixed `Result<>` and exception handling across API, repository, an
 ### Run Tests by Category
 
 ```bash
-# Run common tests (platform-agnostic)
-.\gradlew.bat :shared:commonTest
-
-# Run JVM tests (Spek BDD tests)
+# Run all shared module tests (includes both commonTest and jvmTest)
 .\gradlew.bat :shared:jvmTest
-
-# Run ViewModel tests
-.\gradlew.bat :composeApp:testDebugUnitTest
-
-# Run all tests
-.\gradlew.bat test
 ```
-
-**Test Reports:**
-- `shared/build/reports/tests/commonTest/index.html`
-- `shared/build/reports/tests/jvmTest/index.html`
-- `composeApp/build/reports/tests/testDebugUnitTest/index.html`
 
 **Test Coverage:**
 - **PaymentValidationSpek**: 10 BDD scenarios for validation
 - **PaymentProcessingSpek**: 9 BDD scenarios for payment flow
-- **PaymentValidatorTest** (commonTest): 22+ unit tests for validation logic
+- **PaymentValidatorTest** (commonTest): 24 unit tests for validation logic
 - **ProcessPaymentUseCaseTest**: Use case tests with fakes
 - **PaymentViewModelTest**: State management and interaction testing
 - **TransactionHistoryViewModelTest**: Flow collection and error handling testing
