@@ -129,7 +129,7 @@ class PaymentValidatorTest {
     fun `amount exceeding maximum should return maximum limit error`() {
         val request = PaymentRequest(
             recipientEmail = "user@example.com",
-            amount = 15000.0,
+            amount = 1_500_000.0,
             currency = "USD"
         )
 
@@ -137,6 +137,60 @@ class PaymentValidatorTest {
 
         assertTrue(result is ValidationResult.Error)
         assertTrue(result.messages.contains("Amount exceeds maximum limit of 1,000,000"))
+    }
+
+    @Test
+    fun `amount with more than 2 decimal places should return decimal places error`() {
+        val request = PaymentRequest(
+            recipientEmail = "user@example.com",
+            amount = 100.999,
+            currency = "USD"
+        )
+
+        val result = validator.validate(request)
+
+        assertTrue(result is ValidationResult.Error)
+        assertTrue(result.messages.contains("Amount cannot have more than 2 decimal places"))
+    }
+
+    @Test
+    fun `amount with exactly 2 decimal places should return success`() {
+        val request = PaymentRequest(
+            recipientEmail = "user@example.com",
+            amount = 99.99,
+            currency = "USD"
+        )
+
+        val result = validator.validate(request)
+
+        assertEquals(ValidationResult.Success, result)
+    }
+
+    @Test
+    fun `amount with exactly 1 decimal place should return success`() {
+        val request = PaymentRequest(
+            recipientEmail = "user@example.com",
+            amount = 50.5,
+            currency = "USD"
+        )
+
+        val result = validator.validate(request)
+
+        assertEquals(ValidationResult.Success, result)
+    }
+
+    @Test
+    fun `amount with 3 decimal places should return decimal places error`() {
+        val request = PaymentRequest(
+            recipientEmail = "user@example.com",
+            amount = 10.123,
+            currency = "USD"
+        )
+
+        val result = validator.validate(request)
+
+        assertTrue(result is ValidationResult.Error)
+        assertTrue(result.messages.contains("Amount cannot have more than 2 decimal places"))
     }
 
     @Test

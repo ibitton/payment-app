@@ -30,6 +30,8 @@ class PaymentValidator {
             errors.add("Amount must be greater than 0")
         } else if (request.amount > 1_000_000) {
             errors.add("Amount exceeds maximum limit of 1,000,000")
+        } else if (!hasValidDecimalPlaces(request.amount)) {
+            errors.add("Amount cannot have more than 2 decimal places")
         }
 
         // Validate currency
@@ -53,6 +55,15 @@ class PaymentValidator {
     private fun isValidEmail(email: String): Boolean {
         val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
         return emailRegex.matches(email)
+    }
+
+    /**
+     * Checks if the amount has at most 2 decimal places.
+     * Compares the amount with its rounded value to 2 decimal places.
+     */
+    private fun hasValidDecimalPlaces(amount: Double): Boolean {
+        val rounded = kotlin.math.round(amount * 100) / 100
+        return kotlin.math.abs(amount - rounded) < 0.0001
     }
 }
 
