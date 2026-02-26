@@ -10,7 +10,7 @@ plugins {
 
 kotlin {
     androidLibrary {
-        namespace = "com.cashi.challenge"
+        namespace = "com.cashi.challenge.compose"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
