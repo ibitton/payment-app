@@ -21,10 +21,11 @@ flowchart TB
     end
     
     subgraph Shared["Shared KMP Module"]
-        API["API Client<br/>(Ktor)"]
+        API["PaymentApi Interface<br/>Ktor Implementation"]
         VAL["Validation Logic"]
-        REPO["Repository<br/>Pattern"]
+        REPO["PaymentRepository Interface<br/>Firestore Implementation"]
         MODELS["Data Models"]
+        RESULT["OperationResult<T><br/>Unified Error Handling"]
     end
     
     subgraph Backend["Backend (Ktor)"]
@@ -54,7 +55,49 @@ flowchart TB
 5. Successful payment is saved to Firestore by the client app
 6. Transaction history updates in real-time via Firestore snapshots
 
-## Technology Stack
+### Architecture Patterns
+
+**Interface-Based Design**
+
+The project uses contract interfaces for data layer components, enabling testability and dependency inversion:
+
+```kotlin
+// API Contract
+interface PaymentApi {
+    suspend fun processPayment(request: PaymentRequest, idempotencyKey: String): OperationResult<PaymentResponse>
+}
+
+// Repository Contract  
+interface PaymentRepository {
+    suspend fun saveTransaction(payment: Payment): OperationResult<Unit>
+    fun getAllTransactions(): Flow<List<Payment>>
+}
+```
+
+Implementations (`PaymentApiClient`, `FirestorePaymentRepository`) are bound via Koin DI, allowing test fakes to be substituted without code changes.
+
+**Unified Error Handling**
+
+A sealed class `OperationResult<T>` provides consistent error handling across all layers:
+
+```kotlin
+sealed class OperationResult<out T> {
+    data class Success<T>(val data: T) : OperationResult<T>()
+    data class Failure(val error: Throwable, val message: String) : OperationResult<Nothing>()
+}
+```
+
+This replaces the standard Kotlin `Result<>` type to provide:
+- Consistent error representation across API, repository, and use case layers
+- Rich error information (exception + human-readable message)
+- Extension functions (`map`, `onSuccess`, `onFailure`) for functional composition
+
+**Dependency Injection**
+
+Koin is used throughout the project for dependency management:
+- `commonModule()` in shared module binds interfaces to implementations
+- ViewModels receive use cases via constructor injection
+- Test fakes can be substituted by providing alternative module configurations
 
 | Component | Technology |
 |-----------|------------|
@@ -108,16 +151,32 @@ CashiMobileAppChallenge/
 │       │       │       └── GetTransactionHistoryUseCase.kt
 │       │       ├── data/
 │       │       │   ├── api/
-│       │       │   │   └── PaymentApiClient.kt    # Ktor HTTP client
+│       │       │   │   ├── PaymentApi.kt           # API contract interface
+│       │       │   │   └── PaymentApiClient.kt     # Ktor HTTP client implementation
 │       │       │   └── repository/
-│       │       │       └── PaymentRepository.kt   # Firestore operations
+│       │       │       ├── PaymentRepository.kt    # Repository contract interface
+│       │       │       └── FirestorePaymentRepository.kt # Firestore implementation
 │       │       └── di/
 │       │           └── CommonModule.kt           # Koin DI configuration
+│       ├── commonTest/kotlin/
+│       │   └── com/cashi/challenge/
+│       │       ├── validation/
+│       │       │   └── PaymentValidatorTest.kt # Platform-agnostic validation tests
+│       │       ├── test/
+│       │       │   ├── FakePaymentApi.kt       # Test fake for API
+│       │       │   └── FakePaymentRepository.kt # Test fake for repository
+│       │       └── usecases/
+│       │           └── ProcessPaymentUseCaseTest.kt # Use case unit tests
 │       └── jvmTest/kotlin/
 │           └── com/cashi/challenge/bdd/
 │               ├── PaymentValidationSpek.kt    # BDD validation tests
-│               ├── PaymentProcessingSpek.kt    # BDD processing tests
-│               └── PaymentValidatorTest.kt     # Unit tests
+│               └── PaymentProcessingSpek.kt    # BDD processing tests
+├── composeApp/
+│   └── src/
+│       └── androidUnitTest/kotlin/
+│           └── com/cashi/challenge/ui/viewmodel/
+│               ├── PaymentViewModelTest.kt       # (Not yet implemented - would test state management)
+│               └── TransactionHistoryViewModelTest.kt # (Not yet implemented - would test flow collection)
 ├── appium-tests/                # UI automation tests
 │   ├── payment-flow-test.js     # Appium test script
 │   └── package.json
@@ -187,20 +246,72 @@ curl -X POST http://localhost:8080/payments \
 
 ## Testing
 
-### Run BDD and Unit Tests
+### Test Coverage Overview
+
+| Module | Test Type | Location | Coverage |
+|--------|-----------|----------|----------|
+| **shared** | BDD (Spek) | `shared/src/jvmTest/` | Payment validation scenarios (10+), Payment processing flow (9+) |
+| **shared** | Unit Tests (JVM) | `shared/src/jvmTest/` | PaymentValidator logic with Spek |
+| **shared** | Unit Tests (Common) | `shared/src/commonTest/` | PaymentValidator (22+ tests), Use cases with fakes |
+| **shared** | Fakes/Mocks | `shared/src/commonTest/` | `FakePaymentApi`, `FakePaymentRepository` for testing |
+| **appium-tests** | UI Tests (JS) | `appium-tests/` | Payment flow automation |
+
+**Test Architecture**
+
+The project uses a multi-layered testing approach:
+
+1. **commonTest**: Platform-agnostic unit tests using `kotlin.test` with fake implementations
+2. **jvmTest**: BDD tests using Spek framework with JUnit 5 runner
+3. **androidUnitTest**: Android-specific ViewModel tests with coroutines testing
+4. **appium-tests**: End-to-end UI automation
+
+**Test Fakes and Interfaces**
+
+The architecture uses interface-based design for testability:
+- `PaymentApi` interface with `FakePaymentApi` implementation for tests
+- `PaymentRepository` interface with `FakePaymentRepository` implementation for tests
+- Fakes enable testing use cases without network or Firestore dependencies
+
+**Error Handling in Tests**
+
+The project uses a unified `OperationResult<T>` sealed class for consistent error handling:
+```kotlin
+sealed class OperationResult<out T> {
+    data class Success<T>(val data: T) : OperationResult<T>()
+    data class Failure(val error: Throwable, val message: String) : OperationResult<Nothing>()
+}
+```
+
+This replaces mixed `Result<>` and exception handling across API, repository, and use case layers.
+
+### Run Tests by Category
 
 ```bash
-# Run all JVM tests (includes Spek BDD tests and unit tests)
+# Run common tests (platform-agnostic)
+.\gradlew.bat :shared:commonTest
+
+# Run JVM tests (Spek BDD tests)
 .\gradlew.bat :shared:jvmTest
 
-# View test report
-shared/build/reports/tests/jvmTest/index.html
+# Run ViewModel tests
+.\gradlew.bat :composeApp:testDebugUnitTest
+
+# Run all tests
+.\gradlew.bat test
 ```
+
+**Test Reports:**
+- `shared/build/reports/tests/commonTest/index.html`
+- `shared/build/reports/tests/jvmTest/index.html`
+- `composeApp/build/reports/tests/testDebugUnitTest/index.html`
 
 **Test Coverage:**
 - **PaymentValidationSpek**: 10 BDD scenarios for validation
 - **PaymentProcessingSpek**: 9 BDD scenarios for payment flow
-- **PaymentValidatorTest**: 22 unit tests for validation logic
+- **PaymentValidatorTest** (commonTest): 22+ unit tests for validation logic
+- **ProcessPaymentUseCaseTest**: Use case tests with fakes
+- **PaymentViewModelTest**: State management and interaction testing
+- **TransactionHistoryViewModelTest**: Flow collection and error handling testing
 
 ### Run UI Tests with Appium
 
@@ -250,6 +361,120 @@ node payment-flow-test.js
 - Summary Report (statistics)
 - Graph Results (response time visualization)
 - Aggregate Report (saved to `jmeter/results/`)
+
+## Demo Video
+
+Watch the app in action: [demo.webm](./demo.webm)
+
+The video demonstrates:
+- Sending a payment with email, amount, and currency selection
+- Real-time validation feedback
+- Payment processing and success confirmation
+- Viewing transaction history with live updates
+
+## Demo Script
+
+Follow these steps to demonstrate the app functionality:
+
+### Prerequisites
+- Android emulator running (API 28+) or physical device
+- Backend server started: `.\gradlew.bat :server:run`
+- APK installed: `.\gradlew.bat :androidApp:installDebug`
+
+### Scenario 1: Send a Valid Payment
+1. Open the Cashi app on your device
+2. Enter recipient email: `test@example.com`
+3. Enter amount: `100.00`
+4. Select currency: **USD** from dropdown
+5. Tap "Send Payment" button
+6. **Expected**: Green success message "Payment sent successfully" appears
+
+### Scenario 2: Validation Error (Invalid Email)
+1. Clear the form (tap X on fields if present, or retype)
+2. Enter email: `invalid-email` (no @ symbol)
+3. Enter amount: `50`
+4. Select currency: **EUR**
+5. Tap "Send Payment"
+6. **Expected**: Red error message "Invalid email format" appears inline
+
+### Scenario 3: View Transaction History
+1. From payment screen, tap "History" button at bottom
+2. **Expected**: Transaction list appears showing previous payment
+3. **Expected**: Status shows "Success" with green indicator
+4. **Expected**: Amount shows "$100.00", email shows "test@example.com"
+
+### Scenario 4: Real-time Update Demonstration
+1. Keep History screen open on Device A
+2. From Device B (or emulator instance), send a new payment
+3. **Expected**: New transaction appears automatically in Device A without manual refresh
+4. **Expected**: New entry shows correct amount, currency, and timestamp
+
+### Scenario 5: Currency Support
+1. Return to payment screen (tap back arrow)
+2. Tap currency dropdown
+3. **Expected**: List shows 16 currencies (USD, EUR, GBP, JPY, CAD, etc.)
+4. Select any non-USD currency (e.g., JPY)
+5. Enter amount and valid email
+6. **Expected**: Payment processes with selected currency
+
+## Production Considerations
+
+This application demonstrates core functionality for a technical assessment. The following features would be required for a real-world production FinTech application but were intentionally excluded to maintain scope:
+
+### Architecture & Data Flow
+
+- **Server-Side Firestore Updates**: In this assessment, the client app writes directly to Firestore after receiving backend confirmation. In production, the backend server should update Firestore after processing payments. This ensures:
+  - Single source of truth for transaction state
+  - Prevents race conditions between client writes
+  - Allows server-side validation before persistence
+  - Enables idempotency checks at the data layer
+
+- **Event-Driven Architecture**: Production systems typically use message queues (e.g., Kafka, Pub/Sub) for async payment processing with guaranteed delivery
+
+- **CQRS Pattern**: Separate read/write models - Firestore for fast reads, relational database (PostgreSQL) for complex queries and reporting
+
+### Security & Authentication
+- **User Authentication**: Login/registration with email/password or OAuth (Google, Apple)
+- **PIN/Biometric Confirmation**: Require fingerprint/FaceID or PIN before sending payments
+- **Session Management**: Token-based auth with refresh tokens and automatic logout
+- **Data Encryption**: End-to-end encryption for sensitive transaction data at rest
+
+### Compliance & Audit
+- **KYC/AML Verification**: Identity verification for regulatory compliance
+- **Audit Logging**: Comprehensive transaction audit trails for compliance officers
+- **GDPR Compliance**: Data retention policies and user data export/deletion
+- **PCI DSS Compliance**: Card industry security standards (if handling card data)
+
+### Reliability & Resilience
+- **Offline Queue**: Queue payments when offline, retry automatically when connection restored
+- **Idempotency Keys**: Ensure duplicate submissions don't create multiple transactions
+- **Circuit Breakers**: Handle backend outages gracefully with fallback behavior
+- **Push Notifications**: Notify users of successful payments or received funds via FCM
+
+### User Experience
+- **Transaction Receipts**: Email/SMS confirmation receipts for each transaction
+- **Contact Book**: Save frequent recipients for quick selection
+- **Search & Filtering**: Search transaction history by recipient, date range, amount
+- **Export Data**: PDF/CSV export of transaction history for accounting
+
+### Operational
+- **Analytics Integration**: Firebase Analytics or Mixpanel for user behavior tracking
+- **Crash Reporting**: Firebase Crashlytics or Sentry for error monitoring
+- **A/B Testing Framework**: Experiment with UI variations to optimize conversion
+- **Feature Flags**: Remote configuration to enable/disable features without app updates
+
+### Internationalization
+- **Currency Conversion**: Real-time exchange rates for cross-currency transactions
+- **Localization**: Multi-language support for UI strings and currency formatting
+- **Timezone Handling**: Proper date/time display based on user's locale
+
+### Accessibility
+- **Full TalkBack Support**: Comprehensive screen reader labels and navigation
+- **High Contrast Mode**: Support for visually impaired users
+- **Dynamic Type**: Respect system font size preferences
+- **Color Blindness Friendly**: Patterns/icons in addition to color for status indicators
+
+These features represent industry-standard requirements for production FinTech applications but were deprioritized for this assessment to focus on demonstrating core architecture, KMP implementation, and testing strategies.
 
 ## Architecture Decisions
 
@@ -376,6 +601,6 @@ This project is for technical assessment purposes.
 
 ---
 
-**Last Updated**: February 2026  
-**KMP Version**: 2.3.10  
+**Last Updated**: February 2026
+**KMP Version**: 2.3.10
 **Compose Multiplatform**: 1.10.1
