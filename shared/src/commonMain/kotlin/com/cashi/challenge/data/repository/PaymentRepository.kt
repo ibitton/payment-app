@@ -1,8 +1,6 @@
 package com.cashi.challenge.data.repository
 
 import com.cashi.challenge.domain.models.Payment
-import com.cashi.challenge.domain.models.PaymentRequest
-import com.cashi.challenge.domain.models.PaymentResponse
 import com.cashi.challenge.domain.result.OperationResult
 import kotlinx.coroutines.flow.Flow
 
@@ -21,17 +19,13 @@ interface PaymentRepository {
     suspend fun saveTransaction(payment: Payment): OperationResult<Unit>
 
     /**
-     * Creates and saves a payment transaction from a request and response.
+     * Saves a payment transaction and returns the saved payment.
      * Convenience method for saving after backend processing.
      *
-     * @param request The original payment request
-     * @param response The response from the backend
+     * @param payment The payment domain model to save
      * @return OperationResult containing the saved Payment on success
      */
-    suspend fun createAndSaveTransaction(
-        request: PaymentRequest,
-        response: PaymentResponse
-    ): OperationResult<Payment>
+    suspend fun createAndSaveTransaction(payment: Payment): OperationResult<Payment>
 
     /**
      * Gets all transactions ordered by timestamp (newest first).

@@ -165,6 +165,7 @@ private fun TransactionCard(transaction: Payment) {
                         PaymentStatus.SUCCESS -> MaterialTheme.colorScheme.primary
                         PaymentStatus.FAILED -> MaterialTheme.colorScheme.error
                         PaymentStatus.PENDING -> MaterialTheme.colorScheme.tertiary
+                        PaymentStatus.CANCELLED -> MaterialTheme.colorScheme.outline
                     }
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -183,12 +184,14 @@ private fun StatusChip(status: PaymentStatus) {
         PaymentStatus.SUCCESS -> MaterialTheme.colorScheme.primary
         PaymentStatus.FAILED -> MaterialTheme.colorScheme.error
         PaymentStatus.PENDING -> MaterialTheme.colorScheme.tertiary
+        PaymentStatus.CANCELLED -> MaterialTheme.colorScheme.outline
     }
 
     val label = when (status) {
         PaymentStatus.SUCCESS -> "Success"
         PaymentStatus.FAILED -> "Failed"
         PaymentStatus.PENDING -> "Pending"
+        PaymentStatus.CANCELLED -> "Cancelled"
     }
 
     Row(

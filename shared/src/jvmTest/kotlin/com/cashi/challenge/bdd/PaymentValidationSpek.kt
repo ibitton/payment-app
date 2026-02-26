@@ -1,6 +1,6 @@
 package com.cashi.challenge.bdd
 
-import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentRequest
 import com.cashi.challenge.domain.validation.PaymentValidator
 import com.cashi.challenge.domain.validation.ValidationResult
 import org.spekframework.spek2.Spek
@@ -162,7 +162,7 @@ object PaymentValidationSpek : Spek({
             it("should fail with 'Unsupported currency' error") {
                 val result = validator.validate(unsupportedCurrencyRequest)
                 assertTrue(result is ValidationResult.Error)
-                val errors = (result as ValidationResult.Error).messages
+                val errors = result.messages
                 assertTrue(errors.any { it.contains("Unsupported currency") })
             }
         }
@@ -191,7 +191,7 @@ object PaymentValidationSpek : Spek({
             it("should return all validation errors") {
                 val result = validator.validate(multipleErrorsRequest)
                 assertTrue(result is ValidationResult.Error)
-                val errors = (result as ValidationResult.Error).messages
+                val errors = result.messages
                 assertEquals(3, errors.size)
                 assertTrue(errors.any { it.contains("Invalid email format") })
                 assertTrue(errors.any { it.contains("Amount must be greater than 0") })

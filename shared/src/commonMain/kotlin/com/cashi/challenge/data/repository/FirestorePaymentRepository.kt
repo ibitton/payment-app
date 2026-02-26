@@ -1,9 +1,6 @@
 package com.cashi.challenge.data.repository
 
-import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
-import com.cashi.challenge.domain.models.PaymentRequest
-import com.cashi.challenge.domain.models.PaymentResponse
 import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.result.map
 import dev.gitlive.firebase.firestore.FirebaseFirestore
@@ -41,28 +38,19 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
     }
 
     /**
-     * Creates and saves a payment transaction from a request and response.
+     * Saves a payment transaction and returns the saved payment.
      * Convenience method for saving after backend processing.
      *
-     * @param request The original payment request
-     * @param response The response from the backend
+     * @param payment The payment domain model to save
      * @return OperationResult containing the saved Payment on success
      */
-    override suspend fun createAndSaveTransaction(
-        request: PaymentRequest,
-        response: PaymentResponse
-    ): OperationResult<Payment> {
-        val payment = Payment(
-            id = response.id.ifEmpty { generateTransactionId() },
-            recipientEmail = request.recipientEmail,
-            amount = request.amount,
-            currency = Currency.valueOf(request.currency.uppercase()),
-            status = response.status,
-            timestamp = response.timestamp,
-            errorMessage = response.errorMessage
-        )
-
-        return saveTransaction(payment).map { payment }
+    override suspend fun createAndSaveTransaction(payment: Payment): OperationResult<Payment> {
+        val paymentWithId = if (payment.id.isEmpty()) {
+            payment.copy(id = generateTransactionId())
+        } else {
+            payment
+        }
+        return saveTransaction(paymentWithId).map { paymentWithId }
     }
 
     /**

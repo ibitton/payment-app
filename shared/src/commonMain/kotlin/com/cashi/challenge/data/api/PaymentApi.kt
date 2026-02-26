@@ -1,7 +1,7 @@
 package com.cashi.challenge.data.api
 
-import com.cashi.challenge.domain.models.PaymentRequest
-import com.cashi.challenge.domain.models.PaymentResponse
+import com.cashi.challenge.data.api.dto.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentResponse
 import com.cashi.challenge.domain.result.OperationResult
 
 /**

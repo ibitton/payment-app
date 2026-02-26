@@ -1,18 +1,19 @@
 package com.cashi.challenge.usecases
 
-import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentRequest
 import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.usecases.ProcessPaymentUseCase
 import com.cashi.challenge.domain.validation.PaymentValidator
 import com.cashi.challenge.test.FakePaymentApi
 import com.cashi.challenge.test.FakePaymentRepository
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class ProcessPaymentUseCaseTest {
 
     @Test
-    fun `process payment returns success for valid request`() = kotlinx.coroutines.runBlocking {
+    fun `process payment returns success for valid request`() = runTest {
         val useCase = ProcessPaymentUseCase(
             paymentValidator = PaymentValidator(),
             paymentApi = FakePaymentApi(shouldFail = false),
@@ -32,7 +33,7 @@ class ProcessPaymentUseCaseTest {
     }
 
     @Test
-    fun `process payment returns failure for invalid request`() = kotlinx.coroutines.runBlocking {
+    fun `process payment returns failure for invalid request`() = runTest {
         val useCase = ProcessPaymentUseCase(
             paymentValidator = PaymentValidator(),
             paymentApi = FakePaymentApi(shouldFail = false),

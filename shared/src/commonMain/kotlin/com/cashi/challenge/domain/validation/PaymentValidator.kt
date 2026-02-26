@@ -1,7 +1,7 @@
 package com.cashi.challenge.domain.validation
 
 import com.cashi.challenge.domain.models.Currency
-import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentRequest
 
 /**
  * Validates payment requests before they are sent to the backend.

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
-import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentRequest
 import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.usecases.ProcessPaymentUseCase
 import com.cashi.challenge.domain.validation.PaymentValidationException

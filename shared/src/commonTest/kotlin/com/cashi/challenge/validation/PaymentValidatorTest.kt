@@ -1,6 +1,6 @@
 package com.cashi.challenge.validation
 
-import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.data.api.dto.PaymentRequest
 import com.cashi.challenge.domain.validation.PaymentValidator
 import com.cashi.challenge.domain.validation.ValidationResult
 import kotlin.test.Test
