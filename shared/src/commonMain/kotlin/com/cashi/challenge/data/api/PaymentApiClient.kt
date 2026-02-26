@@ -2,6 +2,7 @@ package com.cashi.challenge.data.api
 
 import com.cashi.challenge.domain.models.PaymentRequest
 import com.cashi.challenge.domain.models.PaymentResponse
+import com.cashi.challenge.domain.result.OperationResult
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
@@ -18,7 +19,7 @@ import io.ktor.http.isSuccess
  *
  * @param httpClient The configured Ktor HTTP client
  */
-class PaymentApiClient(private val httpClient: HttpClient) {
+class PaymentApiClient(private val httpClient: HttpClient) : PaymentApi {
 
     companion object {
         // Use 10.0.2.2 for Android emulator to reach host localhost
@@ -35,19 +36,19 @@ class PaymentApiClient(private val httpClient: HttpClient) {
      *   preventing double charges even if the original response was lost.
      * @return Result containing PaymentResponse on success or exception on failure
      */
-    suspend fun processPayment(request: PaymentRequest, idempotencyKey: String): Result<PaymentResponse> {
+    override suspend fun processPayment(request: PaymentRequest, idempotencyKey: String): OperationResult<PaymentResponse> {
         return try {
-            val response = httpClient.post("$BASE_URL/payments") {
+val response = httpClient.post("$BASE_URL/payments") {
                 contentType(ContentType.Application.Json)
                 header("Idempotency-Key", idempotencyKey)
                 setBody(request)
             }
 
             if (response.status.isSuccess()) {
-                Result.success(response.body())
+                OperationResult.Success(response.body())
             } else {
                 val errorResponse = runCatching { response.body<PaymentResponse>() }.getOrNull()
-                Result.failure(
+                OperationResult.Failure(
                     PaymentApiException(
                         errorResponse?.errorMessage ?: "Payment failed with status: ${response.status}",
                         response.status.value
@@ -55,13 +56,13 @@ class PaymentApiClient(private val httpClient: HttpClient) {
                 )
             }
         } catch (e: ClientRequestException) {
-            Result.failure(PaymentApiException("Client error: ${e.message}", e.response.status.value))
+            OperationResult.Failure(PaymentApiException("Client error: ${e.message}", e.response.status.value))
         } catch (e: ServerResponseException) {
-            Result.failure(PaymentApiException("Server error: ${e.message}", e.response.status.value))
+            OperationResult.Failure(PaymentApiException("Server error: ${e.message}", e.response.status.value))
         } catch (e: Exception) {
-            Result.failure(PaymentApiException("Network error: ${e.message}", -1))
+            OperationResult.Failure(PaymentApiException("Network error: ${e.message}", -1))
         }
-    }
+}
 }
 
 /**
