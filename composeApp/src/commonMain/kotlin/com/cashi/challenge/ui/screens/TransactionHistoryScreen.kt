@@ -21,14 +21,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,8 +41,10 @@ import androidx.compose.ui.unit.sp
 import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
 import com.cashi.challenge.domain.models.PaymentStatus
+import com.cashi.challenge.ui.util.formatInstant
 import com.cashi.challenge.ui.viewmodel.TransactionHistoryViewModel
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Instant
 
 /**
  * Transaction History screen displaying all past payments.
@@ -235,7 +235,7 @@ private fun EmptyTransactionsState() {
  */
 @OptIn(kotlin.time.ExperimentalTime::class)
 private fun formatTimestamp(timestamp: Long): String {
-    return formatInstant(kotlin.time.Instant.fromEpochMilliseconds(timestamp))
+    return formatInstant(Instant.fromEpochMilliseconds(timestamp))
 }
 
 /**
