@@ -1,5 +1,7 @@
-package com.cashi.challenge.ui.screens
+package com.cashi.challenge.ui.util
 
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -9,7 +11,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTime::class)
 actual fun formatInstant(instant: Instant): String {
     val javaInstant = java.time.Instant.ofEpochMilli(instant.toEpochMilliseconds())
-    val dateTime = java.time.ZonedDateTime.ofInstant(javaInstant, java.time.ZoneId.systemDefault())
+    val dateTime = ZonedDateTime.ofInstant(javaInstant, ZoneId.systemDefault())
 
     val date = "${dateTime.year}-${dateTime.monthValue.toString().padStart(2, '0')}-${dateTime.dayOfMonth.toString().padStart(2, '0')}"
     val time = "${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"

@@ -1,4 +1,4 @@
-package com.cashi.challenge.ui.screens
+package com.cashi.challenge.ui.util
 
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
