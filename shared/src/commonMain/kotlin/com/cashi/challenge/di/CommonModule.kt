@@ -1,6 +1,8 @@
 package com.cashi.challenge.di
 
+import com.cashi.challenge.data.api.PaymentApi
 import com.cashi.challenge.data.api.PaymentApiClient
+import com.cashi.challenge.data.repository.FirestorePaymentRepository
 import com.cashi.challenge.data.repository.PaymentRepository
 import com.cashi.challenge.domain.usecases.GetTransactionHistoryUseCase
 import com.cashi.challenge.domain.usecases.ProcessPaymentUseCase
@@ -53,10 +55,10 @@ fun commonModule() = module {
     singleOf(::PaymentValidator)
 
     // API Clients
-    singleOf(::PaymentApiClient)
+    single<PaymentApi> { PaymentApiClient(get()) }
 
     // Repositories
-    singleOf(::PaymentRepository)
+    single<PaymentRepository> { FirestorePaymentRepository(get()) }
 
     // Use Cases
     factoryOf(::ProcessPaymentUseCase)
