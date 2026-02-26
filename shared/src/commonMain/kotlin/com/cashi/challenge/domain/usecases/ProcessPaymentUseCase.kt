@@ -1,10 +1,10 @@
 package com.cashi.challenge.domain.usecases
 
-import com.cashi.challenge.data.api.PaymentApiClient
+import com.cashi.challenge.data.api.PaymentApi
 import com.cashi.challenge.data.repository.PaymentRepository
 import com.cashi.challenge.domain.models.Payment
 import com.cashi.challenge.domain.models.PaymentRequest
-import com.cashi.challenge.domain.models.PaymentStatus
+import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.validation.PaymentValidationException
 import com.cashi.challenge.domain.validation.PaymentValidator
 import com.cashi.challenge.domain.validation.ValidationResult
@@ -19,8 +19,8 @@ import com.cashi.challenge.domain.validation.ValidationResult
  */
 class ProcessPaymentUseCase(
     private val paymentValidator: PaymentValidator,
-    private val paymentApiClient: PaymentApiClient,
-    private val paymentRepository: PaymentRepository
+    private val paymentApi: PaymentApi,
+private val paymentRepository: PaymentRepository
 ) {
 
     /**
@@ -33,30 +33,23 @@ class ProcessPaymentUseCase(
      * @param idempotencyKey A unique key generated per user action to prevent duplicate charges on retry
      * @return Result containing the Payment on success, or exception on failure
      */
-    suspend operator fun invoke(request: PaymentRequest, idempotencyKey: String): Result<Payment> {
+    suspend operator fun invoke(request: PaymentRequest, idempotencyKey: String): OperationResult<Payment> {
         // Step 1: Validate the request
         val validationResult = paymentValidator.validate(request)
         if (validationResult is ValidationResult.Error) {
-            return Result.failure(
+            return OperationResult.Failure(
                 PaymentValidationException(validationResult.messages)
             )
         }
 
         // Step 2: Call the backend API, passing idempotency key to prevent duplicate charges
-        val apiResult = paymentApiClient.processPayment(request, idempotencyKey)
+        val apiResult = paymentApi.processPayment(request, idempotencyKey)
 
         // Step 3: Handle API response and save to Firestore
-        return apiResult.fold(
-            onSuccess = { response ->
-                // Save successful or failed transaction to Firestore
-                paymentRepository.createAndSaveTransaction(request, response)
-            },
-            onFailure = { exception ->
-                // Even if API call failed, we might want to log this locally
-                // For now, just return the failure
-                Result.failure(exception)
-            }
-        )
-    }
+        return when (apiResult) {
+            is OperationResult.Success -> paymentRepository.createAndSaveTransaction(request, apiResult.data)
+            is OperationResult.Failure -> OperationResult.Failure(apiResult.error)
+        }
+}
 }
 

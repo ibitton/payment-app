@@ -2,6 +2,7 @@ package com.cashi.challenge.bdd
 
 import com.cashi.challenge.data.api.PaymentApiClient
 import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.validation.PaymentValidator
 import com.cashi.challenge.domain.validation.ValidationResult
 import io.ktor.client.HttpClient
@@ -41,8 +42,8 @@ object PaymentProcessingSpek : Spek({
 
                 val result = runBlocking { apiClient.processPayment(validRequest, "test-idempotency-key-1") }
 
-                assertTrue(result.isSuccess)
-                val response = result.getOrNull()
+                assertTrue(result is OperationResult.Success)
+                val response = (result as OperationResult.Success).data
                 assertNotNull(response)
                 assertEquals("TXN-12345", response.id)
                 assertEquals(com.cashi.challenge.domain.models.PaymentStatus.SUCCESS, response.status)
@@ -62,8 +63,8 @@ object PaymentProcessingSpek : Spek({
 
                 val result = runBlocking { apiClient.processPayment(validRequest, "test-idempotency-key-2") }
 
-                assertTrue(result.isFailure)
-            }
+                assertTrue(result is OperationResult.Failure)
+}
         }
     }
 

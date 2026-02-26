@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
 import com.cashi.challenge.domain.models.PaymentRequest
+import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.usecases.ProcessPaymentUseCase
 import com.cashi.challenge.domain.validation.PaymentValidationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,20 +105,20 @@ class PaymentViewModel(
                 currency = _uiState.value.currency.name
             )
 
-            processPayment(request, idempotencyKey)
-                .onSuccess { payment ->
+            when (val result = processPayment(request, idempotencyKey)) {
+                is OperationResult.Success -> {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            result = PaymentResult.Success(payment),
+                            result = PaymentResult.Success(result.data),
                             // Clear form on success
                             email = "",
                             amount = ""
                         )
                     }
                 }
-                .onFailure { error ->
-                    val errorMessage = when (error) {
+                is OperationResult.Failure -> {
+                    val errorMessage = when (val error = result.error) {
                         is PaymentValidationException -> error.errors.firstOrNull() ?: "Validation failed"
                         else -> error.message ?: "Payment failed. Please try again."
                     }
@@ -128,7 +129,8 @@ class PaymentViewModel(
                         )
                     }
                 }
-        }
+            }
+}
     }
 }
 
