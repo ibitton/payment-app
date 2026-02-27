@@ -1,11 +1,17 @@
 package com.cashi.challenge.data.repository
 
+import com.cashi.challenge.domain.models.Currency
 import com.cashi.challenge.domain.models.Payment
+import com.cashi.challenge.domain.models.PaymentStatus
 import com.cashi.challenge.domain.result.OperationResult
 import com.cashi.challenge.domain.result.map
+import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlin.time.Clock
 
 /**
  * Firestore implementation of [PaymentRepository].
@@ -22,6 +28,7 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
     /**
      * Saves a payment transaction to Firestore.
      * This is called after receiving a response from the backend API.
+     * Stores timestamp as Firebase Timestamp type for proper querying.
      *
      * @param payment The payment to save
      * @return OperationResult containing Unit on success or failure
@@ -30,7 +37,7 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
         return try {
             firestore.collection(COLLECTION_TRANSACTIONS)
                 .document(payment.id)
-                .set(payment)
+                .set(payment.toFirestoreMap())
             OperationResult.Success(Unit)
         } catch (e: Exception) {
             OperationResult.Failure(e)
@@ -65,8 +72,9 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
             .map { snapshot ->
                 snapshot.documents.mapNotNull { document ->
                     try {
-                        document.data<Payment>()
-                    } catch (_: Exception) {
+                        document.toPayment()
+                    } catch (e: Exception) {
+                        println("DEBUG: Failed to parse document ${document.id}: ${e.message}")
                         null // Skip documents that can't be deserialized
                     }
                 }
@@ -87,8 +95,9 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
             .map { snapshot ->
                 snapshot.documents.mapNotNull { document ->
                     try {
-                        document.data<Payment>()
+                        document.toPayment()
                     } catch (e: Exception) {
+                        println("DEBUG: Failed to parse document ${document.id}: ${e.message}")
                         null
                     }
                 }
@@ -108,7 +117,7 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
                 .get()
 
             if (document.exists) {
-                OperationResult.Success(document.data<Payment>())
+                OperationResult.Success(document.toPayment())
             } else {
                 OperationResult.Success(null)
             }
@@ -123,8 +132,74 @@ class FirestorePaymentRepository(private val firestore: FirebaseFirestore) : Pay
      */
     private fun generateTransactionId(): String {
         // Using System.currentTimeMillis() equivalent that's available in KMP
-        val timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        val timestamp = Clock.System.now().toEpochMilliseconds()
         val randomSuffix = (1000..9999).random()
         return "TXN-$timestamp-$randomSuffix"
+    }
+
+    /**
+     * Converts a Payment domain model to a Firestore-compatible map.
+     * Stores timestamp as a Firebase Timestamp for proper type support.
+     */
+    private fun Payment.toFirestoreMap(): Map<String, Any?> {
+        val seconds = timestamp / 1000
+        val nanoseconds = ((timestamp % 1000) * 1_000_000).toInt()
+        return mapOf(
+            "id" to id,
+            "recipientEmail" to recipientEmail,
+            "amount" to amount,
+            "currency" to currency.name,
+            "status" to status.name,
+            "timestamp" to Timestamp(seconds, nanoseconds),
+            "errorMessage" to errorMessage
+        )
+    }
+
+    /**
+     * Converts a Firestore DocumentSnapshot to a Payment domain model.
+     * Uses a DTO with proper Timestamp support.
+     */
+    private fun DocumentSnapshot.toPayment(): Payment {
+        // Use the data class deserialization which should handle Timestamp properly
+        val dto = data<FirestorePaymentDto>()
+        return dto.toPayment()
+    }
+}
+
+/**
+ * DTO for Firestore serialization with proper Timestamp support.
+ */
+@Serializable
+data class FirestorePaymentDto(
+    val id: String = "",
+    val recipientEmail: String = "",
+    val amount: Double = 0.0,
+    val currency: String = "USD",
+    val status: String = "PENDING",
+    val timestamp: Timestamp? = null,
+    val errorMessage: String? = null
+) {
+    fun toPayment(): Payment {
+        val epochMillis = timestamp?.let { 
+            it.seconds * 1000 + it.nanoseconds / 1_000_000 
+        } ?: Clock.System.now().toEpochMilliseconds()
+
+        return Payment(
+            id = id,
+            recipientEmail = recipientEmail,
+            amount = amount,
+            currency = try {
+                Currency.valueOf(currency)
+            } catch (_: IllegalArgumentException) {
+                Currency.USD
+            },
+            status = try {
+                PaymentStatus.valueOf(status)
+            } catch (_: IllegalArgumentException) {
+                PaymentStatus.PENDING
+            },
+            timestamp = epochMillis,
+            errorMessage = errorMessage
+        )
     }
 }
